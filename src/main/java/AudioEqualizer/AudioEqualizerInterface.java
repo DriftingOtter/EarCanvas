@@ -7,7 +7,7 @@ public interface AudioEqualizerInterface {
 	public boolean addFilter(String filterName, int filterPosition);
 	public boolean removeFilter(int filterPosition) throws EmptyFilterRackException, InvalidFilterRackPositionException;
 	
-	public Cascade getFilter(int filterPosition) throws EmptyFilterRackException;
+	public Cascade getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException;
 
 	
 	public boolean isFull();

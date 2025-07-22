@@ -6,6 +6,11 @@ import uk.me.berndporr.iirj.*;
 public class AudioEqualizer implements AudioEqualizerInterface {
 	
 	protected ArrayList<Cascade> filterRack;
+	
+	
+	public AudioEqualizer() {
+		this.filterRack = new ArrayList<>();
+	}
 
 	@Override
 	public boolean addFilter(String filterName, int stackPos) {
@@ -39,9 +44,11 @@ public class AudioEqualizer implements AudioEqualizerInterface {
 	}
 
 	@Override
-	public Cascade getFilter(int filterPosition) throws EmptyFilterRackException {
+	public Cascade getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
 		if (filterRack.isEmpty()){
 			throw new EmptyFilterRackException("No filter at the location specificed.");
+		} else if (filterPosition > filterRack.size() || filterPosition < 0){
+			throw new IndexOutOfBoundsException();
 		} else {
 			return filterRack.get(filterPosition);
 		}
