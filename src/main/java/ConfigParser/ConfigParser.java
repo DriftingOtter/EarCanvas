@@ -9,11 +9,6 @@ import java.util.ArrayList;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import AudioEqualizer.AudioEqualizer;
-import AudioEqualizer.EmptyFilterRackException;
-import AudioEqualizer.InvalidFilterException;
-import uk.me.berndporr.iirj.Cascade;
-
 public class ConfigParser implements ParserInterface {
 	
 	private ObjectMapper objectMapper;
@@ -53,7 +48,6 @@ public class ConfigParser implements ParserInterface {
 
 	@Override
 	public boolean mkConfigDefaults() throws IOException {
-		
 		return false;
 	}
 	

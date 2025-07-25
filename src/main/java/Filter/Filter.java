@@ -5,6 +5,7 @@ import uk.me.berndporr.iirj.Butterworth;
 import uk.me.berndporr.iirj.Cascade;
 import uk.me.berndporr.iirj.ChebyshevI;
 import uk.me.berndporr.iirj.ChebyshevII;
+import Filter.InvalidFilterException;
 import java.util.Optional;
 
 public class Filter implements FilterInterface {
