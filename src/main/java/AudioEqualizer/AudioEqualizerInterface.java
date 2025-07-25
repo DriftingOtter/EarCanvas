@@ -1,28 +1,18 @@
 package AudioEqualizer;
 
-import uk.me.berndporr.iirj.Cascade;
+import Filter.Filter;
+import Filter.InvalidFilterException;
+import java.util.Optional;
 
 public interface AudioEqualizerInterface {
-	
-	public boolean addFilter(String filterName, int filterPosition);
-	public boolean removeFilter(int filterPosition) throws EmptyFilterRackException, InvalidFilterRackPositionException;
-	
-	public Cascade getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException;
 
-	
-	public boolean isFull();
-	public boolean isEmpty();
-	public int size();
+    Filter addFilter(Filter.FilterType filterType, int order, double sampleRate, Optional<Double> rippleDb, int stackPos) throws InvalidFilterException;
+    boolean removeFilter(int filterPosition) throws EmptyFilterRackException, InvalidFilterRackPositionException;
+    Filter getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException;
 
-	public String isFilter(Cascade filter) throws InvalidFilterException;
+    boolean isFull();
+    boolean isEmpty();
+    int size();
 
-	
-	public Cascade setBandpass(Cascade filter, int order, double sampleRate, double centerFrequnecy, double widthFrequnecy, double rippleDb) throws InvalidFilterException;
-	public Cascade setBandstop(Cascade filter, int order, double sampleRate, double centerFrequnecy, double widthFrequnecy, double rippleDb) throws InvalidFilterException;
-	public Cascade setHighpass(Cascade filter, int order, double sampleRate, double cutoffFrequnecy, double rippleDb) throws InvalidFilterException;
-	public Cascade setLowpass(Cascade filter, int order, double sampleRate, double cutoffFrequnecy, double rippleDb) throws InvalidFilterException;
-
-	
-	public double[] processData(double[] buffer) throws InvalidFilterException;
-	
+    double[] processData(double[] buffer);
 }

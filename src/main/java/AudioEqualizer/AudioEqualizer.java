@@ -1,227 +1,55 @@
 package AudioEqualizer;
 
+import Filter.Filter;
+import Filter.InvalidFilterException;
+import uk.me.berndporr.iirj.Cascade;
 import java.util.ArrayList;
-import uk.me.berndporr.iirj.*;
+import java.util.Optional;
 
 public class AudioEqualizer implements AudioEqualizerInterface {
-	
-	protected ArrayList<Cascade> filterRack;
-	
-	
-	public AudioEqualizer() {
-		this.filterRack = new ArrayList<>();
-	}
 
-	@Override
-	public boolean addFilter(String filterName, int stackPos) {
-		switch (filterName) {
-			case "butterworth":
-				return filterRack.add(new Butterworth());
-			case "bessel":
-				return filterRack.add(new Bessel());
-			case "chebyshev I":
-				return filterRack.add(new ChebyshevI());
-			case "chebyshev II":
-				return filterRack.add(new ChebyshevII());
-		default:
-				return false;
-		}
-	}
-	
-	@Override
-	public boolean removeFilter(int filterPosition) throws EmptyFilterRackException, InvalidFilterRackPositionException {
-		if (filterRack.isEmpty()){
-			throw new EmptyFilterRackException("No filter at the location specificed.");
-		} else {
-			try {
-				filterRack.remove(filterPosition);
-				return true;	
-			} catch (Exception e) {
-				throw new InvalidFilterRackPositionException("Filter position specified does not exist in the rack.");
-				
-			}
-		}
-	}
+    protected ArrayList<Filter> filterRack;
 
-	@Override
-	public Cascade getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
-		if (filterRack.isEmpty()){
-			throw new EmptyFilterRackException("No filter at the location specificed.");
-		} else if (filterPosition > filterRack.size() || filterPosition < 0){
-			throw new IndexOutOfBoundsException();
-		} else {
-			return filterRack.get(filterPosition);
-		}
-
-	}
-	
-	
-	@Override
-	public boolean isFull() {return false;}
-	@Override
-	public boolean isEmpty() {return filterRack.isEmpty();}
-	
-	@Override
-	public int size() {return filterRack.size();}
-	
-	@Override
-	public String isFilter(Cascade filter) throws InvalidFilterException{
-		try {
-			if (filter instanceof Butterworth) {
-				return "butterworth";
-			} else if (filter instanceof Bessel) {
-				return "bessel";
-			} else if (filter instanceof ChebyshevI) {
-				return "chebyshev I";
-			} else if (filter instanceof ChebyshevII) {
-				return "chebyshev II";
-			} else {
-				throw new Exception();
-			}
-		} catch (Exception e) {
-			throw new InvalidFilterException("Filter provided is not of supported type");
-		} 
+    public AudioEqualizer() {
+        this.filterRack = new ArrayList<>();
     }
 
-	@Override
-	public Cascade setBandpass(Cascade filter, int order, double sampleRate, double centerFrequnecy, double widthFrequnecy, double rippleDb) throws InvalidFilterException {
-		try {
-			String filterType = isFilter(filter);
-			
-			switch (filterType) {
-				case "butterworth":
-					((Butterworth) filter).bandPass(order, sampleRate, centerFrequnecy, widthFrequnecy);
-					break;
-				case "bessel":
-					((Bessel) filter).bandPass(order, sampleRate, centerFrequnecy, widthFrequnecy);
-					break;
-				case "chebyshev I":
-					((ChebyshevI) filter).bandPass(order, sampleRate, centerFrequnecy, widthFrequnecy, rippleDb);
-					break;
-				case "chebyshev II":
-					((ChebyshevII) filter).bandPass(order, sampleRate, centerFrequnecy, widthFrequnecy, rippleDb);
-					break;
-				default:
-					throw new Exception();
-			}
-			return filter;
-		} catch (Exception e) {
-			throw new InvalidFilterException("Filter provided is not of supported type");
-		}
-	}
+    public Filter addFilter(Filter.FilterType filterType, int order, double sampleRate, Optional<Double> rippleDb, int stackPos) throws InvalidFilterException {
+        Filter newFilter = new Filter(filterType, order, sampleRate, rippleDb);
+        filterRack.add(stackPos, newFilter);
+        return newFilter;
+    }
 
-	@Override
-	public Cascade setBandstop(Cascade filter, int order, double sampleRate, double centerFrequnecy, double widthFrequnecy, double rippleDb) throws InvalidFilterException{
-		try {
-			String filterType = isFilter(filter);
-			
-			switch (filterType) {
-				case "butterworth":
-					((Butterworth) filter).bandStop(order, sampleRate, centerFrequnecy, widthFrequnecy);
-					break;
-				case "bessel":
-					((Bessel) filter).bandStop(order, sampleRate, centerFrequnecy, widthFrequnecy);
-					break;
-				case "chebyshev I":
-					((ChebyshevI) filter).bandStop(order, sampleRate, centerFrequnecy, widthFrequnecy, rippleDb);
-					break;
-				case "chebyshev II":
-					((ChebyshevII) filter).bandStop(order, sampleRate, centerFrequnecy, widthFrequnecy, rippleDb);
-					break;
-				default:
-					throw new Exception();
-			}
-			return filter;
-		} catch (Exception e) {
-			throw new InvalidFilterException("Filter provided is not of supported type");
-		}
-	}
+    public boolean removeFilter(int filterPosition) throws EmptyFilterRackException, InvalidFilterRackPositionException {
+        if (filterRack.isEmpty()) {
+            throw new EmptyFilterRackException("Filter rack is empty.");
+        }
+        if (filterPosition < 0 || filterPosition >= filterRack.size()) {
+            throw new InvalidFilterRackPositionException("Filter position specified does not exist in the rack.");
+        }
+        filterRack.remove(filterPosition);
+        return true;
+    }
 
-	@Override
-	public Cascade setHighpass(Cascade filter, int order, double sampleRate, double cutoffFrequnecy, double rippleDb)  throws InvalidFilterException{
-		try {
-			String filterType = isFilter(filter);
-			
-			switch (filterType) {
-				case "butterworth":
-					((Butterworth) filter).highPass(order, sampleRate, cutoffFrequnecy);
-					break;
-				case "bessel":
-					((Bessel) filter).highPass(order, sampleRate, cutoffFrequnecy);
-					break;
-				case "chebyshev I":
-					((ChebyshevI) filter).highPass(order, sampleRate, cutoffFrequnecy, rippleDb);
-					break;
-				case "chebyshev II":
-					((ChebyshevII) filter).highPass(order, sampleRate, cutoffFrequnecy, rippleDb);
-					break;
-				default:
-					throw new Exception();
-			}
-			return filter;
-		} catch (Exception e) {
-			throw new InvalidFilterException("Filter provided is not of supported type");
-		}
-	}
-	
-	@Override
-	public Cascade setLowpass(Cascade filter, int order, double sampleRate, double cutoffFrequnecy, double rippleDb) throws InvalidFilterException {
-		try {
-			String filterType = isFilter(filter);
-			
-			switch (filterType) {
-				case "butterworth":
-					((Butterworth) filter).lowPass(order, sampleRate, cutoffFrequnecy);
-					break;
-				case "bessel":
-					((Bessel) filter).lowPass(order, sampleRate, cutoffFrequnecy);
-					break;
-				case "chebyshev I":
-					((ChebyshevI) filter).lowPass(order, sampleRate, cutoffFrequnecy, rippleDb);
-					break;
-				case "chebyshev II":
-					((ChebyshevII) filter).lowPass(order, sampleRate, cutoffFrequnecy, rippleDb);
-					break;
-				default:
-					throw new Exception();
-			}
-			return filter;
-		} catch (Exception e) {
-			throw new InvalidFilterException("Filter provided is not of supported type");
-		}
-	}
+    public Filter getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
+        if (filterRack.isEmpty()) {
+            throw new EmptyFilterRackException("Filter rack is empty.");
+        }
+        return filterRack.get(filterPosition);
+    }
+    
+    public double[] processData(double[] buffer) {
+        for (Filter filter : filterRack) {
+            Cascade settings = filter.getSettings();
+            for (int i = 0; i < buffer.length; ++i) {
+                buffer[i] = settings.filter(buffer[i]);
+            }
+        }
+        return buffer;
+    }
 
-	
-	@Override
-	public double[] processData(double[] buffer) throws InvalidFilterException {
-		for (Cascade filter : filterRack) {
-			String filterType;
-			for (int i=0; i<buffer.length; ++i) {
-				try {
-					filterType = isFilter((Cascade) filter);
-
-					switch (filterType) {
-					case "butterworth":
-						buffer[i] = ((Butterworth) filter).filter(buffer[i]);
-						break;
-					case "bessel":
-						buffer[i] = ((Bessel) filter).filter(buffer[i]);
-						break;
-					case "chebyshev I":
-						buffer[i] = ((ChebyshevI) filter).filter(buffer[i]);
-						break;
-					case "chebyshev II":
-						buffer[i] = ((ChebyshevII) filter).filter(buffer[i]);
-						break;
-					default:
-						throw new Exception();
-				}
-				} catch (Exception e) {
-					throw new InvalidFilterException("A filter within the rack seems to not be of a supported type");
-				}
-			}
-		}
-		return buffer;
-	}
-
+    public boolean isEmpty() {return filterRack.isEmpty();}
+    public int size() {return filterRack.size();}
+    public boolean isFull() {return false;}
+    
 }

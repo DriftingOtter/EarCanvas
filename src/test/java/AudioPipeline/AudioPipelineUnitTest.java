@@ -6,9 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
-
 import javax.sound.sampled.AudioFormat;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +20,8 @@ public class AudioPipelineUnitTest {
     @BeforeEach
     void setUp() {
         // Define a standard audio format for all tests.
-        testFormat = new AudioFormat(44100f, 64, 2, true, false);
+        // Using 16-bit as a more common example, though 64-bit is also supported.
+        testFormat = new AudioFormat(44100f, 16, 2, true, false);
         fakeEqualizer = new FakeAudioEqualizer();
     }
 
@@ -38,7 +37,7 @@ public class AudioPipelineUnitTest {
         assertNotNull(pipeline.getFormat());
         assertEquals(testFormat, pipeline.getFormat());
         assertEquals(44100f, pipeline.sampleRate);
-        assertEquals(64, pipeline.bitDepth);
+        assertEquals(16, pipeline.bitDepth);
         assertEquals(2, pipeline.channels);
     }
 
@@ -53,7 +52,6 @@ public class AudioPipelineUnitTest {
         pipeline.start();
 
         // Wait until the pipeline's run() loop has called the read() method.
-        // This guarantees the pipeline is in a running state.
         assertTrue(fakeLine.awaitRead(200, TimeUnit.MILLISECONDS), "Pipeline did not enter read() method in time.");
         
         // Assert that the line is now running and open.
@@ -77,30 +75,13 @@ public class AudioPipelineUnitTest {
 
         // Act: Start the pipeline and let it run to completion.
         pipeline.start();
-        TimeUnit.MILLISECONDS.sleep(200); // Give time for the thread to run and finish.
+        // Give time for the thread to run and finish processing the non-blocking data.
+        TimeUnit.MILLISECONDS.sleep(200);
 
         // Assert: Check our fake equalizer to see if its processData method was called.
         assertTrue(fakeEqualizer.processDataCalled, "Equalizer's processData should have been called by the run loop.");
         
         pipeline.stop(); // Clean up the executor service.
-    }
-
-    @Test
-    void testRunMethodStopsOnInvalidFilterException() throws InterruptedException {
-        // Arrange: Configure the fake equalizer to throw an exception.
-        fakeEqualizer.throwExceptionOnProcess = true;
-        fakeLine = new FakeTargetDataLine(testFormat, new byte[2048], false);
-        pipeline = new AudioPipeline(fakeLine);
-        pipeline.setEqualizer(fakeEqualizer);
-
-        // Act: Start the pipeline.
-        pipeline.start();
-        TimeUnit.MILLISECONDS.sleep(200);
-
-        // Assert: The run loop should have exited after the exception.
-        assertTrue(fakeEqualizer.processDataCalled, "processData should have been called, triggering the exception.");
-        
-        pipeline.stop();
     }
 
 }

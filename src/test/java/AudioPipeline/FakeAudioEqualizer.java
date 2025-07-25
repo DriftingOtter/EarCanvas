@@ -1,18 +1,10 @@
 package AudioPipeline;
 
 import AudioEqualizer.AudioEqualizer;
-import AudioEqualizer.InvalidFilterException;
 
-/**
- * Processing Properties:
- * 1. Track `processData` has been called (unit tests).
- * 2. Be configured to throw exception(s)  (unit tests).
- * 3. Siphon buffer data passed to it      (integration tests).
- */
 public class FakeAudioEqualizer extends AudioEqualizer {
 	
 	public boolean processDataCalled = false;
-    public boolean throwExceptionOnProcess = false;
     public double[] capturedData = null;
 
     public FakeAudioEqualizer() { 
@@ -20,18 +12,17 @@ public class FakeAudioEqualizer extends AudioEqualizer {
     }
 
     @Override
-    public double[] processData(double[] buffer) throws InvalidFilterException {
+    public double[] processData(double[] buffer) {
         this.processDataCalled = true;
         
         if (buffer != null) {
             this.capturedData = buffer.clone();
         }
 
-        if (throwExceptionOnProcess) {
-            throw new InvalidFilterException("Test exception from fake equalizer");
-        }
+        // The logic for throwing an exception is removed as the superclass method
+        // no longer throws InvalidFilterException.
 
-        // Don't need to return processed data, we just need to know it is retrieving it.
-        return new double[0];
+        // For testing, we don't need to return real data.
+        return buffer;
     }
 }

@@ -1,4 +1,4 @@
-package AudioEqualizer;
+package Filter;
 
 public class InvalidFilterException extends Exception {
 	
