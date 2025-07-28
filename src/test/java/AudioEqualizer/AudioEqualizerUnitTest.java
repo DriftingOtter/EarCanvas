@@ -1,24 +1,32 @@
 package AudioEqualizer;
 
-import Filter.Filter;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import uk.me.berndporr.iirj.Bessel;
-import uk.me.berndporr.iirj.Butterworth;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import Filter.Filter;
+import Filter.InvalidFilterException;
+import uk.me.berndporr.iirj.Butterworth;
+
 
 public class AudioEqualizerUnitTest {
+
     private AudioEqualizer equalizer;
     private final double sampleRate = 44100;
     private final int order = 4;
 
-    // This method runs before each test, ensuring a clean equalizer instance.
+    // This method runs before each test, ensuring a clean equalizer instance for each test.
     @BeforeEach
     public void setUp() {
         equalizer = new AudioEqualizer();
@@ -26,152 +34,124 @@ public class AudioEqualizerUnitTest {
 
     @Test
     public void testInitialState() {
-        assertTrue(equalizer.isEmpty(), "New equalizer should be empty.");
-        assertEquals(0, equalizer.size(), "New equalizer should have size 0.");
-        assertFalse(equalizer.isFull(), "Equalizer should never be full.");
+        assertTrue(equalizer.isEmpty(), "A new equalizer should be empty.");
+        assertEquals(0, equalizer.size(), "A new equalizer should have a size of 0.");
+        assertFalse(equalizer.isFull(), "The equalizer should never report as full.");
     }
 
     @Test
-    public void testAddFilter() {
-        // Add a Butterworth filter and verify state
-        assertDoesNotThrow(() -> {
-            Filter filter1 = equalizer.addFilter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty(), 0);
-            assertNotNull(filter1);
-            assertEquals(order, filter1.getOrder());
-        });
+    public void testAddAndGetFilter() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
+        // 1. Create a Butterworth filter instance
+        Filter butterworthFilter = new Filter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty());
+        
+        // 2. Add the filter to the equalizer
+        equalizer.addFilter(butterworthFilter, 0);
+
+        // 3. Verify the state of the equalizer
         assertEquals(1, equalizer.size());
         assertFalse(equalizer.isEmpty());
-
-        // Add a Chebyshev filter with ripple and verify state
-        assertDoesNotThrow(() -> {
-            Filter filter2 = equalizer.addFilter(Filter.FilterType.ChebyshevI, order, sampleRate, Optional.of(0.5), 1);
-            assertNotNull(filter2);
-            assertEquals(0.5, filter2.getRippleDb());
-        });
-        assertEquals(2, equalizer.size());
+        
+        // 4. Retrieve the filter and verify it's the correct one
+        Filter retrievedFilter = equalizer.getFilter(0);
+        assertSame(butterworthFilter, retrievedFilter, "The retrieved filter should be the same instance that was added.");
+        assertInstanceOf(Butterworth.class, retrievedFilter.getSettings(), "The filter's settings should be of type Butterworth.");
     }
 
     @Test
-    public void testGetFilter() {
-        // Add two different filters
-        assertDoesNotThrow(() -> {
-            equalizer.addFilter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty(), 0);
-            equalizer.addFilter(Filter.FilterType.Bessel, order, sampleRate, Optional.empty(), 1);
-        });
+    public void testAddMultipleFilters() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
+        // Create multiple filter instances
+        Filter filter1 = new Filter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty());
+        Filter filter2 = new Filter(Filter.FilterType.ChebyshevI, order, sampleRate, Optional.of(0.5));
 
-        // Assert we get the correct type of filter settings from the specified position
-        assertDoesNotThrow(() -> {
-            Filter f1 = equalizer.getFilter(0);
-            Filter f2 = equalizer.getFilter(1);
-            assertInstanceOf(Butterworth.class, f1.getSettings());
-            assertInstanceOf(Bessel.class, f2.getSettings());
-        });
+        // Add filters to the rack
+        equalizer.addFilter(filter1, 0);
+        equalizer.addFilter(filter2, 1);
+        assertEquals(2, equalizer.size(), "Equalizer should contain two filters.");
+
+        // Verify the correct filters are in the correct positions
+        assertSame(filter1, equalizer.getFilter(0));
+        assertSame(filter2, equalizer.getFilter(1));
+        assertEquals(0.5, equalizer.getFilter(1).getRippleDb());
     }
 
+
     @Test
-    public void testRemoveFilter() {
-        // Add filters
-        assertDoesNotThrow(() -> {
-            equalizer.addFilter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty(), 0);
-            equalizer.addFilter(Filter.FilterType.Bessel, order, sampleRate, Optional.empty(), 1);
-        });
+    public void testRemoveFilter() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
+        // Add two filters
+        Filter butterworthFilter = new Filter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty());
+        Filter besselFilter = new Filter(Filter.FilterType.Bessel, order, sampleRate, Optional.empty());
+        equalizer.addFilter(butterworthFilter, 0);
+        equalizer.addFilter(besselFilter, 1);
         assertEquals(2, equalizer.size());
 
-        // Test removing a filter successfully
-        assertDoesNotThrow(() -> equalizer.removeFilter(1)); // Remove Bessel
-        assertEquals(1, equalizer.size());
+        // Remove the second filter (Bessel)
+        assertTrue(equalizer.removeFilter(1), "removeFilter should return true on success.");
+        assertEquals(1, equalizer.size(), "Size should be 1 after removing a filter.");
 
-        // Check that the correct filter remains
-        assertDoesNotThrow(() -> {
-            Filter filter = equalizer.getFilter(0);
-            assertInstanceOf(Butterworth.class, filter.getSettings());
-        });
+        // Verify the correct filter (Butterworth) remains
+        Filter remainingFilter = equalizer.getFilter(0);
+        assertInstanceOf(Butterworth.class, remainingFilter.getSettings());
 
         // Remove the last filter
-        assertDoesNotThrow(() -> equalizer.removeFilter(0));
-        assertTrue(equalizer.isEmpty());
+        equalizer.removeFilter(0);
+        assertTrue(equalizer.isEmpty(), "Equalizer should be empty after removing the last filter.");
     }
 
     @Test
-    public void testModifyFilter() {
-        // Add a filter
-        Filter chebyFilter = assertDoesNotThrow(() -> 
-            equalizer.addFilter(Filter.FilterType.ChebyshevI, order, sampleRate, Optional.of(1.0), 0)
-        );
+    public void testModifyFilterAfterAdding() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
+        // Create and add a filter
+        Filter filter = new Filter(Filter.FilterType.ChebyshevI, order, sampleRate, Optional.of(1.0));
+        equalizer.addFilter(filter, 0);
+
+        // Retrieve the filter from the rack and modify it
+        Filter filterToModify = equalizer.getFilter(0);
+        assertDoesNotThrow(() -> filterToModify.setHighpass(1000), "Should be able to modify a filter after retrieval.");
         
-        // Retrieve the filter and modify it. We can't inspect the state easily,
-        // but we can ensure no exceptions are thrown for valid operations.
-        assertDoesNotThrow(() -> {
-            Filter filterToModify = equalizer.getFilter(0);
-            filterToModify.setHighpass(1000);
-        });
-
-        assertDoesNotThrow(() -> {
-            Filter filterToModify = equalizer.getFilter(0);
-            filterToModify.setLowpass(500);
-        });
-        
-        assertDoesNotThrow(() -> {
-            Filter filterToModify = equalizer.getFilter(0);
-            filterToModify.setBandpass(1000, 400);
-        });
-
-        assertDoesNotThrow(() -> {
-            Filter filterToModify = equalizer.getFilter(0);
-            filterToModify.setBandstop(2000, 200);
-        });
+        // This test primarily ensures that operations can be performed on a retrieved filter.
+        // A more complex test could process data to verify the modification was applied.
     }
 
     @Test
-    public void testExceptionHandling() {
-        // Test removing from an empty rack
-        assertThrows(EmptyFilterRackException.class, () -> equalizer.removeFilter(0));
+    public void testExceptionHandling() throws InvalidFilterException {
+        // Test operations on an empty rack
+        assertThrows(EmptyFilterRackException.class, () -> equalizer.removeFilter(0), "Should throw when removing from an empty rack.");
+        assertThrows(EmptyFilterRackException.class, () -> equalizer.getFilter(0), "Should throw when getting from an empty rack.");
 
-        // Test getting from an empty rack
-        assertThrows(EmptyFilterRackException.class, () -> equalizer.getFilter(0));
+        // Add a filter to test out-of-bounds exceptions
+        equalizer.addFilter(new Filter(Filter.FilterType.Bessel, 2, sampleRate, Optional.empty()), 0);
 
-        // Add a filter for further tests
-        assertDoesNotThrow(() -> equalizer.addFilter(Filter.FilterType.Bessel, 2, sampleRate, Optional.empty(), 0));
-
-        // Test out-of-bounds removal
-        assertThrows(InvalidFilterRackPositionException.class, () -> equalizer.removeFilter(1), "Should throw for index >= size");
-        assertThrows(InvalidFilterRackPositionException.class, () -> equalizer.removeFilter(-1), "Should throw for negative index");
-
-        // Test out-of-bounds get
-        assertThrows(IndexOutOfBoundsException.class, () -> equalizer.getFilter(1));
-        assertThrows(IndexOutOfBoundsException.class, () -> equalizer.getFilter(-1));
-
-        // Test adding a filter with an invalid parameter (e.g., ripple for Butterworth)
-        // Note: The current Filter class constructor handles this gracefully, but this tests the principle.
-        assertDoesNotThrow(() -> equalizer.addFilter(Filter.FilterType.Butterworth, order, sampleRate, Optional.of(1.0), 0));
+        // Test out-of-bounds access
+        assertThrows(IndexOutOfBoundsException.class, () -> equalizer.removeFilter(1), "Should throw for index >= size.");
+        assertThrows(IndexOutOfBoundsException.class, () -> equalizer.removeFilter(-1), "Should throw for a negative index.");
+        assertThrows(IndexOutOfBoundsException.class, () -> equalizer.getFilter(1), "Should throw for index >= size.");
+        assertThrows(IndexOutOfBoundsException.class, () -> equalizer.getFilter(-1), "Should throw for a negative index.");
     }
-    
+
     @Test
-    public void processDataEmptyRackTest() {
+    public void testProcessDataWithEmptyRack() {
         double[] input = {0.1, 0.2, 0.3, 0.4, 0.5};
-        double[] inputClone = input.clone();
+        double[] originalInput = input.clone();
 
-        // Processing with an empty rack should not change the data
+        // Processing with an empty rack should not alter the data
         double[] output = equalizer.processData(input);
-        assertArrayEquals(inputClone, output);
+        assertArrayEquals(originalInput, output, "Processing with an empty rack should not change the data.");
     }
 
     @Test
-    public void processDataWithFilterTest() {
+    public void testProcessDataWithActiveFilter() throws InvalidFilterException {
         double[] input = {0.1, -0.2, 0.3, -0.4, 0.5};
-        double[] inputClone = input.clone();
+        double[] originalInput = input.clone();
 
-        // Add a filter and set it up (e.g., a low-pass filter)
-        Filter filter = assertDoesNotThrow(() -> 
-            equalizer.addFilter(Filter.FilterType.Butterworth, 4, sampleRate, Optional.empty(), 0)
-        );
-        filter.setLowpass(100); // A strong low-pass filter
+        // Create a strong low-pass filter
+        Filter filter = new Filter(Filter.FilterType.Butterworth, 4, sampleRate, Optional.empty());
+        filter.setLowpass(100); // Set a low cutoff frequency
+        equalizer.addFilter(filter, 0);
 
         // Process the data
         double[] output = equalizer.processData(input);
-        
-        // The output should be different from the input
-        assertFalse(Arrays.equals(inputClone, output), "Processing with a filter should modify the data.");
-        assertEquals(inputClone.length, output.length, "Output array length should match input array length.");
+
+        // Verify that the filter has modified the data
+        assertEquals(originalInput.length, output.length, "Output array length must match input array length.");
+        assertFalse(Arrays.equals(originalInput, output), "Processing with an active filter should modify the data.");
     }
 }

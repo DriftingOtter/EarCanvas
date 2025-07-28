@@ -1,20 +1,19 @@
 package AudioEqualizer;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import Filter.Filter;
+import Filter.InvalidFilterException;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class AudioEqualizerIntegrationTest {
 
     private AudioEqualizer equalizer;
-
-    private final double SAMPLE_RATE = 48000;
-    private final int NUM_SAMPLES    = 4096;
-    private final int FILTER_ORDER   = 4;
+    private final double SAMPLE_RATE = 48000.0;
+    private final int NUM_SAMPLES = 4096;
+    private final int FILTER_ORDER = 4;
 
     @BeforeEach
     public void setUp() {
@@ -28,29 +27,31 @@ public class AudioEqualizerIntegrationTest {
             for (double freq : frequencies) {
                 sample += Math.sin(2 * Math.PI * freq * i / SAMPLE_RATE);
             }
-            signal[i] = sample / frequencies.length;
+            signal[i] = sample / frequencies.length; // Normalize to prevent clipping
         }
         return signal;
     }
 
     private double getFrequencyMagnitude(Complex[] fftResult, double freq) {
         int index = (int) (freq * NUM_SAMPLES / SAMPLE_RATE);
+        if (index >= fftResult.length) {
+            // Handle potential out-of-bounds access if freq is too high
+            return 0.0;
+        }
         return fftResult[index].abs();
     }
 
-
     @Test
-    public void testLowPassFilterIntegration() {
-        // 1. Configure a low-pass filter
+    public void testLowPassFilterIntegration() throws InvalidFilterException {
+        // 1. Create and configure a low-pass filter
         double cutoff = 400; // Hz
-        Filter filter = assertDoesNotThrow(() -> 
-            equalizer.addFilter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty(), 0)
-        );
+        Filter filter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
         filter.setLowpass(cutoff);
+        equalizer.addFilter(filter, 0); // Add the configured filter to the rack
 
-        // 2. Create a signal with a component to be passed (200Hz) and one to be cut (8000Hz)
+        // 2. Create a signal with components to be passed (200Hz) and cut (8000Hz)
         double[] signal = generateTestSignal(200, 8000);
-        double[] processedSignal = equalizer.processData(signal);
+        double[] processedSignal = equalizer.processData(signal.clone());
 
         // 3. Perform FFT on the processed signal
         Complex[] complexSignal = new Complex[NUM_SAMPLES];
@@ -63,25 +64,24 @@ public class AudioEqualizerIntegrationTest {
         double lowFreqMag = getFrequencyMagnitude(fftResult, 200);
         double highFreqMag = getFrequencyMagnitude(fftResult, 8000);
 
-        // The high frequency component should be significantly attenuated compared to the low one.
+        // The high frequency component should be significantly attenuated
         assertTrue(lowFreqMag > highFreqMag * 10,
             "Low-pass filter should attenuate high frequencies. Low Freq Mag: " + lowFreqMag + ", High Freq Mag: " + highFreqMag);
     }
 
     @Test
-    public void testHighPassFilterIntegration() {
-        // 1. Configure a high-pass filter
+    public void testHighPassFilterIntegration() throws InvalidFilterException {
+        // 1. Create and configure a high-pass filter
         double cutoff = 4000; // Hz
-        Filter filter = assertDoesNotThrow(() -> 
-            equalizer.addFilter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty(), 0)
-        );
+        Filter filter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
         filter.setHighpass(cutoff);
+        equalizer.addFilter(filter, 0);
 
-        // 2. Create a signal with a component to be cut (200Hz) and one to be passed (8000Hz)
+        // 2. Create a signal with components to be cut (200Hz) and passed (8000Hz)
         double[] signal = generateTestSignal(200, 8000);
-        double[] processedSignal = equalizer.processData(signal);
+        double[] processedSignal = equalizer.processData(signal.clone());
 
-        // 3. Perform FFT on the processed signal
+        // 3. Perform FFT
         Complex[] complexSignal = new Complex[NUM_SAMPLES];
         for (int i = 0; i < NUM_SAMPLES; i++) {
             complexSignal[i] = new Complex(processedSignal[i], 0);
@@ -92,27 +92,27 @@ public class AudioEqualizerIntegrationTest {
         double lowFreqMag = getFrequencyMagnitude(fftResult, 200);
         double highFreqMag = getFrequencyMagnitude(fftResult, 8000);
 
-        // The low frequency component should be significantly attenuated compared to the high one.
+        // The low frequency component should be significantly attenuated
         assertTrue(highFreqMag > lowFreqMag * 10,
             "High-pass filter should attenuate low frequencies. High Freq Mag: " + highFreqMag + ", Low Freq Mag: " + lowFreqMag);
     }
 
     @Test
-    public void testBandPassBehaviorWithMultipleFilters() {
-        // 1. Configure a low-pass and a high-pass to create a band-pass filter (100Hz - 400Hz)
-        Filter lowPassFilter = assertDoesNotThrow(() -> 
-            equalizer.addFilter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty(), 0)
-        );
-        lowPassFilter.setLowpass(400);
+    public void testBandPassBehaviorWithMultipleFilters() throws InvalidFilterException {
+        // 1. Configure a low-pass and a high-pass to create a band-pass effect
+        Filter lowPassFilter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
+        lowPassFilter.setLowpass(400); // Pass frequencies below 400Hz
 
-        Filter highPassFilter = assertDoesNotThrow(() -> 
-            equalizer.addFilter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty(), 1)
-        );
-        highPassFilter.setHighpass(100);
+        Filter highPassFilter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
+        highPassFilter.setHighpass(100); // Pass frequencies above 100Hz
+
+        // Add both filters to the rack
+        equalizer.addFilter(lowPassFilter, 0);
+        equalizer.addFilter(highPassFilter, 1);
 
         // 2. Create a signal with components below, inside, and above the passband
         double[] signal = generateTestSignal(50, 250, 1000);
-        double[] processedSignal = equalizer.processData(signal);
+        double[] processedSignal = equalizer.processData(signal.clone());
 
         // 3. Perform FFT
         Complex[] complexSignal = new Complex[NUM_SAMPLES];
@@ -126,9 +126,8 @@ public class AudioEqualizerIntegrationTest {
         double insideMag = getFrequencyMagnitude(fftResult, 250);
         double aboveMag = getFrequencyMagnitude(fftResult, 1000);
 
-        // The frequency inside the passband should have a much larger magnitude than those outside.
-        assertTrue(insideMag > belowMag * 10, "Component below passband should be attenuated.");
-        assertTrue(insideMag > aboveMag * 10, "Component above passband should be attenuated.");
+        // The frequency inside the passband (250Hz) should have a much larger magnitude
+        assertTrue(insideMag > belowMag * 10, "Component below passband (50Hz) should be attenuated.");
+        assertTrue(insideMag > aboveMag * 10, "Component above passband (1000Hz) should be attenuated.");
     }
-
 }

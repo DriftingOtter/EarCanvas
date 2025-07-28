@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AudioPipeline implements Runnable {
 
     // --- Normalization Constants ---
-    private static final double NORM_8_BIT = 128.0;
+    private static final double NORM_8_BIT = 127.0;
     private static final double NORM_16_BIT = 32767.0;
     private static final double NORM_32_BIT_INT = 2147483647.0;
 
@@ -147,7 +147,7 @@ public class AudioPipeline implements Runnable {
         for (int i = 0; i < samples; i++) {
             switch (bitDepth) {
                 case 8:
-                    doubleArray[i] = (buffer.get() - NORM_8_BIT) / NORM_8_BIT;
+                	doubleArray[i] = ((buffer.get() & 0xFF) - NORM_8_BIT) / NORM_8_BIT;
                     break;
                 case 16:
                     doubleArray[i] = buffer.getShort() / NORM_16_BIT;
@@ -182,7 +182,7 @@ public class AudioPipeline implements Runnable {
 
             switch (bitDepth) {
                 case 8:
-                    buffer.put((byte) ((clampedSample * NORM_8_BIT) + NORM_8_BIT));
+                    buffer.put((byte) ((clampedSample * NORM_8_BIT) + (NORM_8_BIT+1)));
                     break;
                 case 16:
                     buffer.putShort((short) (clampedSample * NORM_16_BIT));

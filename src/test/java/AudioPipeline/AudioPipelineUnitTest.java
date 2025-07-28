@@ -1,39 +1,42 @@
 package AudioPipeline;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import AudioEqualizer.AudioEqualizer;
 import java.util.concurrent.TimeUnit;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.TargetDataLine;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class AudioPipelineUnitTest {
 
     private AudioPipeline pipeline;
-    private FakeTargetDataLine fakeLine;
-    private FakeAudioEqualizer fakeEqualizer;
+
+    @Mock
+    private TargetDataLine mockLine;
+
+    @Mock
+    private AudioEqualizer mockEqualizer;
+
     private AudioFormat testFormat;
 
     @BeforeEach
     void setUp() {
-        // Define a standard audio format for all tests.
-        // Using 16-bit as a more common example, though 64-bit is also supported.
+        MockitoAnnotations.openMocks(this);
+        // Default format for basic unit tests
         testFormat = new AudioFormat(44100f, 16, 2, true, false);
-        fakeEqualizer = new FakeAudioEqualizer();
+        when(mockLine.getFormat()).thenReturn(testFormat);
+        pipeline = new AudioPipeline(mockLine);
+        pipeline.setEqualizer(mockEqualizer);
     }
 
     @Test
     void testConstructorInitializesFormat() {
-        // Arrange
-        fakeLine = new FakeTargetDataLine(testFormat, new byte[0], false);
-        
-        // Act
-        pipeline = new AudioPipeline(fakeLine);
-
-        // Assert
         assertNotNull(pipeline.getFormat());
         assertEquals(testFormat, pipeline.getFormat());
         assertEquals(44100f, pipeline.sampleRate);
@@ -42,46 +45,34 @@ public class AudioPipelineUnitTest {
     }
 
     @Test
-    void testStartAndStop() throws InterruptedException {
-        // Arrange: Create a fake line that will block when read() is called.
-        fakeLine = new FakeTargetDataLine(testFormat, new byte[2048], true);
-        pipeline = new AudioPipeline(fakeLine);
-        pipeline.setEqualizer(fakeEqualizer);
-
-        // Act: Start the pipeline.
+    void testStartAndStopLifecycle() {
         pipeline.start();
-
-        // Wait until the pipeline's run() loop has called the read() method.
-        assertTrue(fakeLine.awaitRead(200, TimeUnit.MILLISECONDS), "Pipeline did not enter read() method in time.");
-        
-        // Assert that the line is now running and open.
-        assertTrue(fakeLine.isRunning(), "Line should be running after pipeline.start() and entering read().");
-        assertTrue(fakeLine.isOpen(), "Line should be open after pipeline.start().");
-
-        // Act: Stop the pipeline.
+        verify(mockLine, timeout(100)).start();
         pipeline.stop();
-        
-        // Assert that the line is now stopped and closed.
-        assertFalse(fakeLine.isRunning(), "Line should be stopped after pipeline.stop().");
-        assertFalse(fakeLine.isOpen(), "Line should be closed after pipeline.stop().");
+        verify(mockLine, timeout(100)).stop();
+        verify(mockLine, timeout(100)).close();
     }
 
     @Test
-    void testRunMethodProcessesData() throws InterruptedException {
-        // Arrange: Create a fake line that reads its data and then finishes.
-        fakeLine = new FakeTargetDataLine(testFormat, new byte[2048], false);
-        pipeline = new AudioPipeline(fakeLine);
-        pipeline.setEqualizer(fakeEqualizer);
+    void testRunMethodProcessesDataWhenEqualizerIsActive() {
+        when(mockEqualizer.size()).thenReturn(1);
+        when(mockLine.read(any(byte[].class), anyInt(), anyInt())).thenReturn(1024).thenReturn(-1);
 
-        // Act: Start the pipeline and let it run to completion.
         pipeline.start();
-        // Give time for the thread to run and finish processing the non-blocking data.
-        TimeUnit.MILLISECONDS.sleep(200);
 
-        // Assert: Check our fake equalizer to see if its processData method was called.
-        assertTrue(fakeEqualizer.processDataCalled, "Equalizer's processData should have been called by the run loop.");
-        
-        pipeline.stop(); // Clean up the executor service.
+        verify(mockEqualizer, timeout(500).times(1)).processData(any(double[].class));
+        pipeline.stop();
     }
 
+    @Test
+    void testRunMethodSkipsProcessingWhenEqualizerIsEmpty() throws InterruptedException {
+        when(mockEqualizer.size()).thenReturn(0);
+        when(mockLine.read(any(byte[].class), anyInt(), anyInt())).thenReturn(1024).thenReturn(-1);
+
+        pipeline.start();
+        TimeUnit.MILLISECONDS.sleep(200);
+
+        verify(mockEqualizer, never()).processData(any(double[].class));
+        pipeline.stop();
+    }
 }

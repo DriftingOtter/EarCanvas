@@ -1,10 +1,8 @@
 package AudioEqualizer;
 
 import Filter.Filter;
-import Filter.InvalidFilterException;
 import uk.me.berndporr.iirj.Cascade;
 import java.util.ArrayList;
-import java.util.Optional;
 
 public class AudioEqualizer implements AudioEqualizerInterface {
 
@@ -14,18 +12,16 @@ public class AudioEqualizer implements AudioEqualizerInterface {
         this.filterRack = new ArrayList<>();
     }
 
-    public Filter addFilter(Filter.FilterType filterType, int order, double sampleRate, Optional<Double> rippleDb, int stackPos) throws InvalidFilterException {
-        Filter newFilter = new Filter(filterType, order, sampleRate, rippleDb);
-        filterRack.add(stackPos, newFilter);
-        return newFilter;
+    public void addFilter(Filter filter, int rackPosition) {
+        filterRack.add(rackPosition, filter);
     }
 
-    public boolean removeFilter(int filterPosition) throws EmptyFilterRackException, InvalidFilterRackPositionException {
+    public boolean removeFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
         if (filterRack.isEmpty()) {
             throw new EmptyFilterRackException("Filter rack is empty.");
         }
         if (filterPosition < 0 || filterPosition >= filterRack.size()) {
-            throw new InvalidFilterRackPositionException("Filter position specified does not exist in the rack.");
+            throw new IndexOutOfBoundsException("Filter position specified does not exist in the rack.");
         }
         filterRack.remove(filterPosition);
         return true;
@@ -34,6 +30,9 @@ public class AudioEqualizer implements AudioEqualizerInterface {
     public Filter getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
         if (filterRack.isEmpty()) {
             throw new EmptyFilterRackException("Filter rack is empty.");
+        }
+        if (filterPosition < 0 || filterPosition >= filterRack.size()) {
+            throw new IndexOutOfBoundsException("Filter position specified does not exist in the rack.");
         }
         return filterRack.get(filterPosition);
     }

@@ -9,8 +9,7 @@ import Filter.InvalidFilterException;
 import java.util.Optional;
 
 public class Filter implements FilterInterface {
-	
-	int order;
+    int order;
 	double sampleRate;
 	double centerFrequnecy;
 	double frequnecyWidth;
@@ -54,13 +53,12 @@ public class Filter implements FilterInterface {
                 default:
                     throw new RuntimeException();
             }
-
+            
+            this.filterType = filterType;
             this.order = order;
             this.sampleRate = sampleRate;
-
-            if (rippleDb.isEmpty()) {this.rippleDb = 0.0;}
-            this.rippleDb = rippleDb.get();
-
+            this.rippleDb = rippleDb.orElse(0.0);
+            
             } catch (Exception e) {
                     throw new InvalidFilterException("Invalid filter type provided. Please enter (i.e. Butterworth, Bessel, ChebyshevI, ChebyshevII)", e);
             }
@@ -136,16 +134,16 @@ public class Filter implements FilterInterface {
 
         switch (filterType) {
             case Butterworth:
-                ((Butterworth)settings).highPass(order, sampleRate, cutoffFrequnecy);
+                ((Butterworth)settings).lowPass(order, sampleRate, cutoffFrequnecy);
 				break;
 			case Bessel:
-                ((Bessel)settings).highPass(order, sampleRate, cutoffFrequnecy);
+                ((Bessel)settings).lowPass(order, sampleRate, cutoffFrequnecy);
 				break;
 			case ChebyshevI:
-                ((ChebyshevI)settings).highPass(order, sampleRate, cutoffFrequnecy, rippleDb);
+                ((ChebyshevI)settings).lowPass(order, sampleRate, cutoffFrequnecy, rippleDb);
 				break;
 			case ChebyshevII:
-                 ((ChebyshevII)settings).highPass(order, sampleRate, cutoffFrequnecy, rippleDb);
+                 ((ChebyshevII)settings).lowPass(order, sampleRate, cutoffFrequnecy, rippleDb);
 				break;
 			default:
 				throw new UnsupportedOperationException("This filter does not support setting a lowpass.");
