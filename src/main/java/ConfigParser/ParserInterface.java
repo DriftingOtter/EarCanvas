@@ -1,19 +1,18 @@
 package ConfigParser;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
-
-import AudioEqualizer.AudioEqualizer;
-import uk.me.berndporr.iirj.Cascade;
+import java.util.Optional;
 
 public interface ParserInterface {
 
-	boolean addConfig(ArrayList<Object> filterValues) throws IOException;
-	public boolean setConfig() throws IOException;
-	public boolean removeConfig() throws IOException;
+	public boolean addConfig(ArrayList<Object> filterValues, Optional<String> configName) throws IOException;
+	public boolean removeConfig(String configName) throws IOException;
 	
+	public ArrayList<Object> getConfig(String configName);
 	
-	boolean mkConfigDefaults() throws IOException;
+	public Path findConfig(Path configPath);
 	
 	
 }
