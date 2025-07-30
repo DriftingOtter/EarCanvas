@@ -11,5 +11,5 @@ public interface FilterInterface {
     public double getCutoffFrequnecy();
 	public double getRippleDb();
     public Cascade getSettings();
-	
+    
 }

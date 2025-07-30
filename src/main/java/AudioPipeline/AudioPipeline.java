@@ -16,9 +16,11 @@ public class AudioPipeline implements Runnable {
     private static final double NORM_32_BIT_INT = 2147483647.0;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private TargetDataLine line;
-    private AudioFormat format;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    
+    private TargetDataLine targetLine;
+    private SourceDataLine sourceLine;
+    private AudioFormat format;
 
     protected float sampleRate;
     protected int bitDepth;
@@ -52,19 +54,6 @@ public class AudioPipeline implements Runnable {
         }
     }
     
-    // Testing constructor (NOT USED IN REAL WORLD EXECUTION)
-    protected AudioPipeline(TargetDataLine lineForTest) {
-        this.line = lineForTest;
-        if (this.line != null) {
-            this.format = line.getFormat();
-            this.sampleRate = format.getSampleRate();
-            this.bitDepth = format.getSampleSizeInBits();
-            this.channels = format.getChannels();
-            this.bigEndian = format.isBigEndian();
-            this.encoding = format.getEncoding();
-        }
-    }
-
     public void setEqualizer(AudioEqualizer equalizer) {
         this.equalizer = equalizer;
     }
@@ -75,18 +64,24 @@ public class AudioPipeline implements Runnable {
 
     public void start() {
         try {
-            if (this.line == null) {
-                DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
-                if (!AudioSystem.isLineSupported(info)) {
-                    throw new RuntimeException("Target data line does not support " + format.toString() + ".");
-                }
-                this.line = (TargetDataLine) AudioSystem.getLine(info);
+            // --- Setup Input Line (Microphone) ---
+            DataLine.Info targetInfo = new DataLine.Info(TargetDataLine.class, format);
+            if (!AudioSystem.isLineSupported(targetInfo)) {
+                throw new RuntimeException("Target data line does not support " + format.toString() + ".");
             }
+            this.targetLine = (TargetDataLine) AudioSystem.getLine(targetInfo);
+            this.targetLine.open(format, targetLine.getBufferSize());
+            this.targetLine.start();
 
-            if (!line.isOpen()) {
-                line.open(format, line.getBufferSize());
+            // --- Setup Output Line (Speakers) ---
+            DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
+            if (!AudioSystem.isLineSupported(sourceInfo)) {
+                throw new RuntimeException("Source data line does not support " + format.toString() + ".");
             }
-            line.start();
+            this.sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+            this.sourceLine.open(format, sourceLine.getBufferSize());
+            this.sourceLine.start();
+
             running.set(true);
             executorService.submit(this);
             System.out.println("AudioPipeline: Service started successfully...");
@@ -107,30 +102,38 @@ public class AudioPipeline implements Runnable {
                 executorService.shutdownNow();
             }
 
-            if (line != null) {
-                line.stop();
-                line.close();
+            if (targetLine != null) {
+                targetLine.stop();
+                targetLine.close();
+            }
+            if (sourceLine != null) {
+                sourceLine.drain();
+                sourceLine.stop();
+                sourceLine.close();
             }
             System.out.println("AudioPipeline: Stopped.");
         }
     }
 
     public void run() {
-        int bufferSize = (int)(sampleRate * channels * (bitDepth / 8) * 0.05);
+        int bufferSize = (int)(sampleRate * channels * (bitDepth / 8) * 0.015);
         byte[] buffer = new byte[bufferSize];
 
         while (running.get()) {
-            if (line != null) {
-                int bytesRead = line.read(buffer, 0, buffer.length);
+            if (targetLine != null && sourceLine != null) {
+                int bytesRead = targetLine.read(buffer, 0, buffer.length);
                 if (bytesRead > 0) {
-                    if (equalizer != null && equalizer.size() > 0) {
+                    byte[] processedBytes;
+                    if (equalizer != null && !equalizer.isEmpty()) {
                         double[] doubleBuffer = toDoubleArray(buffer, bytesRead);
                         doubleBuffer = equalizer.processData(doubleBuffer);
-                        byte[] processedBytes = toByteArray(doubleBuffer, bytesRead);
-                        System.arraycopy(processedBytes, 0, buffer, 0, processedBytes.length);
+                        processedBytes = toByteArray(doubleBuffer, bytesRead);
+                    } else {
+                        // If no equalizer, just pass the original audio through
+                        processedBytes = buffer;
                     }
-                } else if (bytesRead == -1) {
-                    running.set(false);
+                    // Write the final audio (processed or not) to the speakers
+                    sourceLine.write(processedBytes, 0, bytesRead);
                 }
             }
         }
@@ -207,5 +210,4 @@ public class AudioPipeline implements Runnable {
         }
         return buffer.array();
     }
-
 }

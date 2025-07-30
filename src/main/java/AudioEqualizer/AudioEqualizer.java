@@ -1,24 +1,25 @@
 package AudioEqualizer;
 
 import Filter.Filter;
+import NativeFilter.GraphicEqualizer;
 import uk.me.berndporr.iirj.Cascade;
 import java.util.ArrayList;
 
 public class AudioEqualizer implements AudioEqualizerInterface {
 
-    protected ArrayList<Filter> filterRack;
+    protected ArrayList<Object> filterRack;
 
     public AudioEqualizer() {
         this.filterRack = new ArrayList<>();
     }
 
-    public void addFilter(Filter filter, int rackPosition) {
+    public void addFilter(Object filter, int rackPosition) {
         filterRack.add(rackPosition, filter);
     }
 
     public boolean removeFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
         if (filterRack.isEmpty()) {
-            throw new EmptyFilterRackException("Filter rack is empty.");
+            throw new EmptyFilterRackException("Filter position specified does not exist in the rack.");
         }
         if (filterPosition < 0 || filterPosition >= filterRack.size()) {
             throw new IndexOutOfBoundsException("Filter position specified does not exist in the rack.");
@@ -27,28 +28,32 @@ public class AudioEqualizer implements AudioEqualizerInterface {
         return true;
     }
 
-    public Filter getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
+    public Object getFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException {
         if (filterRack.isEmpty()) {
-            throw new EmptyFilterRackException("Filter rack is empty.");
+            throw new EmptyFilterRackException("Filter position specified does not exist in the rack.");
         }
         if (filterPosition < 0 || filterPosition >= filterRack.size()) {
             throw new IndexOutOfBoundsException("Filter position specified does not exist in the rack.");
         }
         return filterRack.get(filterPosition);
     }
-    
+
     public double[] processData(double[] buffer) {
-        for (Filter filter : filterRack) {
-            Cascade settings = filter.getSettings();
-            for (int i = 0; i < buffer.length; ++i) {
-                buffer[i] = settings.filter(buffer[i]);
+        for (Object filter : filterRack) {
+            if (filter instanceof Filter) {
+                Cascade settings = ((Filter) filter).getSettings();
+                for (int i = 0; i < buffer.length; ++i) {
+                    buffer[i] = settings.filter(buffer[i]);
+                }
+            } else if (filter instanceof GraphicEqualizer) {
+                buffer = ((GraphicEqualizer) filter).process(buffer);
             }
         }
         return buffer;
     }
 
-    public boolean isEmpty() {return filterRack.isEmpty();}
-    public int size() {return filterRack.size();}
-    public boolean isFull() {return false;}
-    
+    public boolean isEmpty() { return filterRack.isEmpty(); }
+    public int size() { return filterRack.size(); }
+    public boolean isFull() { return false; }
+
 }
