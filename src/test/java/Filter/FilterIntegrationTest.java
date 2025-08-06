@@ -19,7 +19,7 @@ class FilterIntegrationTest {
     @DisplayName("Butterworth Low-pass filter processes a sample")
     void testButterworthLowPassIntegration() {
         assertDoesNotThrow(() -> {
-            Filter filter = new Filter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty());
+            IIRFilter filter = new IIRFilter(IIRFilter.FilterType.Butterworth, order, sampleRate, Optional.empty());
             filter.setLowpass(1000.0);
             Cascade settings = filter.getSettings();
             double output = settings.filter(sampleInput);
@@ -31,7 +31,7 @@ class FilterIntegrationTest {
     @DisplayName("Bessel High-pass filter processes a sample")
     void testBesselHighPassIntegration() {
         assertDoesNotThrow(() -> {
-            Filter filter = new Filter(Filter.FilterType.Bessel, order, sampleRate, Optional.empty());
+            IIRFilter filter = new IIRFilter(IIRFilter.FilterType.Bessel, order, sampleRate, Optional.empty());
             filter.setHighpass(1000.0);
             Cascade settings = filter.getSettings();
             double output = settings.filter(sampleInput);
@@ -43,7 +43,7 @@ class FilterIntegrationTest {
     @DisplayName("ChebyshevI Band-pass filter processes a sample")
     void testChebyshevIBandPassIntegration() {
         assertDoesNotThrow(() -> {
-            Filter filter = new Filter(Filter.FilterType.ChebyshevI, order, sampleRate, Optional.of(rippleDb));
+            IIRFilter filter = new IIRFilter(IIRFilter.FilterType.ChebyshevI, order, sampleRate, Optional.of(rippleDb));
             filter.setBandpass(2000.0, 500.0);
             Cascade settings = filter.getSettings();
             double output = settings.filter(sampleInput);
@@ -55,7 +55,7 @@ class FilterIntegrationTest {
     @DisplayName("ChebyshevII Band-stop filter processes a sample")
     void testChebyshevIIBandStopIntegration() {
         assertDoesNotThrow(() -> {
-            Filter filter = new Filter(Filter.FilterType.ChebyshevII, order, sampleRate, Optional.of(rippleDb));
+            IIRFilter filter = new IIRFilter(IIRFilter.FilterType.ChebyshevII, order, sampleRate, Optional.of(rippleDb));
             filter.setBandstop(2000.0, 500.0);
             Cascade settings = filter.getSettings();
             double output = settings.filter(sampleInput);

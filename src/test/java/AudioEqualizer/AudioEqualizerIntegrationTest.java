@@ -2,11 +2,12 @@ package AudioEqualizer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import Filter.Filter;
-import Filter.InvalidFilterException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import IIRFilter.IIRFilter;
+import IIRFilter.InvalidFilterException;
 
 public class AudioEqualizerIntegrationTest {
 
@@ -45,7 +46,7 @@ public class AudioEqualizerIntegrationTest {
     public void testLowPassFilterIntegration() throws InvalidFilterException {
         // 1. Create and configure a low-pass filter
         double cutoff = 400; // Hz
-        Filter filter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
+        IIRFilter filter = new IIRFilter(IIRFilter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
         filter.setLowpass(cutoff);
         equalizer.addFilter(filter, 0); // Add the configured filter to the rack
 
@@ -73,7 +74,7 @@ public class AudioEqualizerIntegrationTest {
     public void testHighPassFilterIntegration() throws InvalidFilterException {
         // 1. Create and configure a high-pass filter
         double cutoff = 4000; // Hz
-        Filter filter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
+        IIRFilter filter = new IIRFilter(IIRFilter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
         filter.setHighpass(cutoff);
         equalizer.addFilter(filter, 0);
 
@@ -100,10 +101,10 @@ public class AudioEqualizerIntegrationTest {
     @Test
     public void testBandPassBehaviorWithMultipleFilters() throws InvalidFilterException {
         // 1. Configure a low-pass and a high-pass to create a band-pass effect
-        Filter lowPassFilter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
+        IIRFilter lowPassFilter = new IIRFilter(IIRFilter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
         lowPassFilter.setLowpass(400); // Pass frequencies below 400Hz
 
-        Filter highPassFilter = new Filter(Filter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
+        IIRFilter highPassFilter = new IIRFilter(IIRFilter.FilterType.Butterworth, FILTER_ORDER, SAMPLE_RATE, Optional.empty());
         highPassFilter.setHighpass(100); // Pass frequencies above 100Hz
 
         // Add both filters to the rack

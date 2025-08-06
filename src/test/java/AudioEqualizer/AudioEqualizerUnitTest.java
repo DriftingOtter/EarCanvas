@@ -15,8 +15,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import Filter.Filter;
-import Filter.InvalidFilterException;
+import IIRFilter.IIRFilter;
+import IIRFilter.InvalidFilterException;
 import uk.me.berndporr.iirj.Butterworth;
 
 
@@ -42,7 +42,7 @@ public class AudioEqualizerUnitTest {
     @Test
     public void testAddAndGetFilter() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
         // 1. Create a Butterworth filter instance
-        Filter butterworthFilter = new Filter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty());
+        IIRFilter butterworthFilter = new IIRFilter(IIRFilter.FilterType.Butterworth, order, sampleRate, Optional.empty());
         
         // 2. Add the filter to the equalizer
         equalizer.addFilter(butterworthFilter, 0);
@@ -52,7 +52,7 @@ public class AudioEqualizerUnitTest {
         assertFalse(equalizer.isEmpty());
         
         // 4. Retrieve the filter and verify it's the correct one
-        Filter retrievedFilter = equalizer.getFilter(0);
+        IIRFilter retrievedFilter = equalizer.getFilter(0);
         assertSame(butterworthFilter, retrievedFilter, "The retrieved filter should be the same instance that was added.");
         assertInstanceOf(Butterworth.class, retrievedFilter.getSettings(), "The filter's settings should be of type Butterworth.");
     }
@@ -60,8 +60,8 @@ public class AudioEqualizerUnitTest {
     @Test
     public void testAddMultipleFilters() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
         // Create multiple filter instances
-        Filter filter1 = new Filter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty());
-        Filter filter2 = new Filter(Filter.FilterType.ChebyshevI, order, sampleRate, Optional.of(0.5));
+        IIRFilter filter1 = new IIRFilter(IIRFilter.FilterType.Butterworth, order, sampleRate, Optional.empty());
+        IIRFilter filter2 = new IIRFilter(IIRFilter.FilterType.ChebyshevI, order, sampleRate, Optional.of(0.5));
 
         // Add filters to the rack
         equalizer.addFilter(filter1, 0);
@@ -78,8 +78,8 @@ public class AudioEqualizerUnitTest {
     @Test
     public void testRemoveFilter() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
         // Add two filters
-        Filter butterworthFilter = new Filter(Filter.FilterType.Butterworth, order, sampleRate, Optional.empty());
-        Filter besselFilter = new Filter(Filter.FilterType.Bessel, order, sampleRate, Optional.empty());
+        IIRFilter butterworthFilter = new IIRFilter(IIRFilter.FilterType.Butterworth, order, sampleRate, Optional.empty());
+        IIRFilter besselFilter = new IIRFilter(IIRFilter.FilterType.Bessel, order, sampleRate, Optional.empty());
         equalizer.addFilter(butterworthFilter, 0);
         equalizer.addFilter(besselFilter, 1);
         assertEquals(2, equalizer.size());
@@ -89,7 +89,7 @@ public class AudioEqualizerUnitTest {
         assertEquals(1, equalizer.size(), "Size should be 1 after removing a filter.");
 
         // Verify the correct filter (Butterworth) remains
-        Filter remainingFilter = equalizer.getFilter(0);
+        IIRFilter remainingFilter = equalizer.getFilter(0);
         assertInstanceOf(Butterworth.class, remainingFilter.getSettings());
 
         // Remove the last filter
@@ -100,11 +100,11 @@ public class AudioEqualizerUnitTest {
     @Test
     public void testModifyFilterAfterAdding() throws InvalidFilterException, EmptyFilterRackException, IndexOutOfBoundsException {
         // Create and add a filter
-        Filter filter = new Filter(Filter.FilterType.ChebyshevI, order, sampleRate, Optional.of(1.0));
+        IIRFilter filter = new IIRFilter(IIRFilter.FilterType.ChebyshevI, order, sampleRate, Optional.of(1.0));
         equalizer.addFilter(filter, 0);
 
         // Retrieve the filter from the rack and modify it
-        Filter filterToModify = equalizer.getFilter(0);
+        IIRFilter filterToModify = equalizer.getFilter(0);
         assertDoesNotThrow(() -> filterToModify.setHighpass(1000), "Should be able to modify a filter after retrieval.");
         
         // This test primarily ensures that operations can be performed on a retrieved filter.
@@ -118,7 +118,7 @@ public class AudioEqualizerUnitTest {
         assertThrows(EmptyFilterRackException.class, () -> equalizer.getFilter(0), "Should throw when getting from an empty rack.");
 
         // Add a filter to test out-of-bounds exceptions
-        equalizer.addFilter(new Filter(Filter.FilterType.Bessel, 2, sampleRate, Optional.empty()), 0);
+        equalizer.addFilter(new IIRFilter(IIRFilter.FilterType.Bessel, 2, sampleRate, Optional.empty()), 0);
 
         // Test out-of-bounds access
         assertThrows(IndexOutOfBoundsException.class, () -> equalizer.removeFilter(1), "Should throw for index >= size.");
@@ -143,7 +143,7 @@ public class AudioEqualizerUnitTest {
         double[] originalInput = input.clone();
 
         // Create a strong low-pass filter
-        Filter filter = new Filter(Filter.FilterType.Butterworth, 4, sampleRate, Optional.empty());
+        IIRFilter filter = new IIRFilter(IIRFilter.FilterType.Butterworth, 4, sampleRate, Optional.empty());
         filter.setLowpass(100); // Set a low cutoff frequency
         equalizer.addFilter(filter, 0);
 

@@ -1,13 +1,11 @@
 package NativeFilter;
 
-import java.io.*;
 import java.util.Arrays;
 
-public class GraphicEqualizer implements NativeFilterInterface {
-
+public class GraphicEqualizer { 
     static {
         try {
-            System.loadLibrary("graphic_equalizer");
+        	NativeLibLoader.loadLibrary("graphic_equalizer");
         } catch (UnsatisfiedLinkError e) {
             System.err.println("GraphicEqualizer: Native code library failed to load.\n" + e);
             throw e;
@@ -17,43 +15,66 @@ public class GraphicEqualizer implements NativeFilterInterface {
     private int channels;
     private int bufferSize;
     private float sampleRate;
-    private final int bandCount = 16;
-    private double[] gains16;
+    private final int bandCount = 10;
+    private double qFactor = 6;
+    private double[] bandGains = new double[] {
+            0.0,    // 31 Hz
+            0.0,    // 63 Hz
+            0.0,    // 125 Hz
+            0.0,    // 250 Hz
+            0.0,    // 500 Hz
+            0.0,    // 1000 Hz
+            0.0,    // 2000 Hz
+            0.0,    // 4000 Hz
+            0.0,    // 8000 Hz
+            0.0     // 16000 Hz
+        };
 
-    private static native void processData(double[] buffer, int length, int channels, float sampleRate, double[] gains16);
 
+    public int getChannels() { return this.channels; }
+    public int getBufferSize() { return this.bufferSize; }
+    public int getBandCount() { return this.bandCount; }
+    public double[] getGains() { return this.bandGains; }
+    public double getQ() { return this.qFactor; }
+
+    public void resetGains() { this.bandGains = new double[bandCount]; }
+    public void setChannels(int channelCount) { this.channels = channelCount; }
+    public void setBufferSize(int bufferSize) { this.bufferSize = bufferSize; }
+    public void setGains(double[] bandGains) { this.bandGains = sanitizeGains(bandGains, this.bandCount); }
+    public void setSampleRate(float sampleRate) {this.sampleRate = sampleRate;}
+    public void setQ(double q) {this.qFactor = q;}
+    
+    private static double[] sanitizeGains(double[] gains, int bandCount) {
+        double[] sanitized = new double[bandCount];
+        for (int i = 0; i < bandCount; i++) {
+            double g = (i < gains.length) ? gains[i] : 0.0;
+            sanitized[i] = Math.max(-2.0, Math.min(2.0, g));
+        }
+        return sanitized;
+    }
+    
+    // --- Constructors ---
     public GraphicEqualizer(int channels, int bufferSize, float sampleRate) {
         this.channels = channels;
         this.bufferSize = bufferSize;
         this.sampleRate = sampleRate;
-        this.gains16 = new double[bandCount];
+        this.qFactor = 6.0;
+        this.bandGains = new double[bandCount];
     }
 
-    public GraphicEqualizer(int channels, int bufferSize, float sampleRate, double[] gains16) {
+    public GraphicEqualizer(int channels, int bufferSize, float sampleRate, double[] bandGains) {
         this.channels = channels;
         this.bufferSize = bufferSize;
         this.sampleRate = sampleRate;
-        this.gains16 = sanitizeGains(gains16);
+        this.qFactor = 6.0;
+        this.bandGains = sanitizeGains(bandGains, this.bandCount);
     }
     
-    public int getChannels() { return this.channels; }
-    public int getBufferSize() { return this.bufferSize; }
-    public int getBandCount() { return this.bandCount; }
-    public double[] getGains16() { return this.gains16; }
+    // --- Native Method ---
+    private static native void processData(double[] buffer, int length, int channels, float sampleRate, double[] bandGains, double qFactor);
 
-    public void resetGains() { this.gains16 = new double[bandCount]; }
-   
-    public void setChannels(int channelCount) { this.channels = channelCount; }
-    public void setBufferSize(int bufferSize) { this.bufferSize = bufferSize; }
-    public void setGains16(double[] gains16) { this.gains16 = sanitizeGains(gains16); }
-    public void setSampleRate(float sampleRate) {this.sampleRate = sampleRate;}
-    public void setFrequency(float frequency) {throw new UnsupportedOperationException("GraphicEQ has fixed band frequencies. Use setGains16() instead.");}
-    public void setQ(float q) {throw new UnsupportedOperationException("GraphicEQ has fixed Q values for its bands.");}
-    public void setGain(float gainDb) {throw new UnsupportedOperationException("Use setGains16() to set gains for all bands.");}
-
-    @Override
     public double[] process(double[] inputBuffer) {
-        if (inputBuffer == null || gains16 == null) {
+        if (inputBuffer == null || bandGains == null) {
             throw new IllegalArgumentException("Input buffer and gain array must not be null.");
         }
         if (inputBuffer.length != this.bufferSize) {
@@ -65,17 +86,9 @@ public class GraphicEqualizer implements NativeFilterInterface {
 
         double[] processedBuffer = Arrays.copyOf(inputBuffer, inputBuffer.length);
         
-        processData(processedBuffer, processedBuffer.length, this.channels, this.sampleRate, this.gains16);
+        processData(processedBuffer, processedBuffer.length, this.channels, this.sampleRate, this.bandGains, this.qFactor);
         
         return processedBuffer;
     }
-
-    private static double[] sanitizeGains(double[] gains) {
-        double[] sanitized = new double[16];
-        for (int i = 0; i < 16; i++) {
-            double g = (i < gains.length) ? gains[i] : 0.0;
-            sanitized[i] = Math.max(0.0, Math.min(1.0, g));
-        }
-        return sanitized;
-    }
+    
 }

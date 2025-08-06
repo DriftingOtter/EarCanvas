@@ -1,9 +1,10 @@
 package AudioEqualizer;
 
-import Filter.Filter;
 import NativeFilter.GraphicEqualizer;
 import uk.me.berndporr.iirj.Cascade;
 import java.util.ArrayList;
+
+import IIRFilter.IIRFilter;
 
 public class AudioEqualizer implements AudioEqualizerInterface {
 
@@ -40,13 +41,13 @@ public class AudioEqualizer implements AudioEqualizerInterface {
 
     public double[] processData(double[] buffer) {
         for (Object filter : filterRack) {
-            if (filter instanceof Filter) {
-                Cascade settings = ((Filter) filter).getSettings();
-                for (int i = 0; i < buffer.length; ++i) {
+            if (filter instanceof IIRFilter f) {
+                Cascade settings = f.getSettings();
+                for (int i = 0; i < buffer.length; i++) {
                     buffer[i] = settings.filter(buffer[i]);
                 }
-            } else if (filter instanceof GraphicEqualizer) {
-                buffer = ((GraphicEqualizer) filter).process(buffer);
+            } else if (filter instanceof GraphicEqualizer eq) {
+                buffer = eq.process(buffer);
             }
         }
         return buffer;

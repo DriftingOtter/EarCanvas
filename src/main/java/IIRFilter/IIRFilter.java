@@ -1,14 +1,16 @@
-package Filter;
+package IIRFilter;
 
 import uk.me.berndporr.iirj.Bessel;
 import uk.me.berndporr.iirj.Butterworth;
 import uk.me.berndporr.iirj.Cascade;
 import uk.me.berndporr.iirj.ChebyshevI;
 import uk.me.berndporr.iirj.ChebyshevII;
-import Filter.InvalidFilterException;
+
 import java.util.Optional;
 
-public class Filter implements FilterInterface {
+import IIRFilter.InvalidFilterException;
+
+public class IIRFilter implements IIRFilterInterface {
     int order;
 	double sampleRate;
 	double centerFrequnecy;
@@ -35,7 +37,7 @@ public class Filter implements FilterInterface {
 	private void setFrequencyWidth(double frequnecyWidth) {this.frequnecyWidth = frequnecyWidth;}
 	private void setCutoffFrequnecy(double cutoffFrequnecy) {this.cutoffFrequnecy = cutoffFrequnecy;}
 
-    public Filter(FilterType filterType, int order, double sampleRate, Optional<Double> rippleDb) throws InvalidFilterException {
+    public IIRFilter(FilterType filterType, int order, double sampleRate, Optional<Double> rippleDb) throws InvalidFilterException {
         try {
             switch (filterType) {
                 case Butterworth:

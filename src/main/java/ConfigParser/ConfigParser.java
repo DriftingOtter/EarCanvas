@@ -26,7 +26,7 @@ public class ConfigParser implements ParserInterface {
         this.dateTimeFormatter = DateTimeFormatter.ofPattern("dd_MM_yy__hh_mm_a");
 
         Path cwd = Paths.get(System.getProperty("user.dir"));
-        Path resourcePath = cwd.resolve("src/main/java/resources");
+        Path resourcePath = cwd.resolve("src/main/configs");
         this.configDirectory = resourcePath.toAbsolutePath();
 
         System.out.println(configDirectory.toString());

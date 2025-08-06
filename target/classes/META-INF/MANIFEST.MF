@@ -1,4 +1,10 @@
 Manifest-Version: 1.0
 Build-Jdk-Spec: 21
+Specification-Title: Project-Pickup
+Specification-Version: 0.0
+Implementation-Title: Project-Pickup
+Build-Jdk: 21.0.7
+Built-By: daksh
 Created-By: Maven Integration for Eclipse
+Implementation-Version: 0.0.1-SNAPSHOT
 
