@@ -2,7 +2,7 @@ package NativeFilter;
 
 import java.util.Arrays;
 
-public class Limiter {
+public class Limiter implements NativeFilterInterface {
 
     static {
         try {

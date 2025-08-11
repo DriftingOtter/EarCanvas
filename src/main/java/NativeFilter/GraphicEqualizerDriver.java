@@ -2,7 +2,7 @@ package NativeFilter;
 
 import java.util.Arrays;
 
-public class GEQdriver {
+public class GraphicEqualizerDriver {
 	
 	public static void main(String[] args) {
         // --- 1. Setup Audio Parameters ---

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-         
+<!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>ocean.driftingotter</groupId>
     <artifactId>Project-Pickup</artifactId>
@@ -11,7 +9,6 @@
     <name>Project-Pickup</name>
     <description>Audio processing project with graphic equalizer</description>
     <url>http://www.example.com</url>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
@@ -21,8 +18,8 @@
         <junit.version>5.11.0</junit.version>
         <jackson.version>2.17.2</jackson.version>
         <mockito.version>5.18.0</mockito.version>
+        <javafx.version>21.0.2</javafx.version>
     </properties>
-
     <!-- Dependency Management -->
     <dependencyManagement>
         <dependencies>
@@ -42,7 +39,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
     <!-- Project Dependencies -->
     <dependencies>
         <!-- Main dependencies -->
@@ -51,43 +47,60 @@
             <artifactId>iirj</artifactId>
             <version>1.7</version>
         </dependency>
-        
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-        
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-    </dependencies>
+        
+       	<dependency>
+       		<groupId>org.openjfx</groupId>
+        	<artifactId>javafx-controls</artifactId>
+        	<version>${javafx.version}</version>
+    	</dependency>
+    	
+    	<dependency>
+        	<groupId>org.openjfx</groupId>
+        	<artifactId>javafx-fxml</artifactId>
+        	<version>${javafx.version}</version>
+    	</dependency> 
+    	
+    	<dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>3.4.1</version> </dependency>
 
+    <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf-intellij-themes</artifactId>
+        <version>3.4.1</version>
+    </dependency>
+        
+    </dependencies>
     <!-- Build Configuration -->
     <build>
         <defaultGoal>compile</defaultGoal>
-        
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -97,7 +110,6 @@
                 </includes>
             </resource>
         </resources>
-
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -132,7 +144,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
         <plugins>
             <!-- Compiler plugin -->
             <plugin>
@@ -145,25 +156,31 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
-
             <!-- Clean plugin - clean native libraries -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
                     <filesets>
+                        <!-- OS-specific binaries -->
                         <fileset>
                             <directory>src/main/resources/native</directory>
                             <includes>
-                                <include>**/*.so</include>
-                                <include>**/*.dll</include>
-                                <include>**/*.dylib</include>
+                                <include>linux-x86_64/**/*.so</include>
+                                <include>macos-x86_64/**/*.dylib</include>
+                                <include>windows-x86_64/**/*.dll</include>
+                            </includes>
+                        </fileset>
+                        <!-- Config files -->
+                        <fileset>
+                            <directory>src/main/resources/native/configs</directory>
+                            <includes>
+                                <include>**/*</include>
                             </includes>
                         </fileset>
                     </filesets>
                 </configuration>
             </plugin>
-
             <!-- Create native library directory -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -178,13 +195,15 @@
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/src/main/resources/native"/>
+                                <mkdir dir="${project.basedir}/src/main/resources/native/linux-x86_64" />
+                                <mkdir dir="${project.basedir}/src/main/resources/native/macos-x86_64" />
+                                <mkdir dir="${project.basedir}/src/main/resources/native/windows-x86_64" />
+                                <mkdir dir="${project.basedir}/src/main/resources/native/configs" />
                             </target>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
             <!-- Build native library using gcc -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -199,7 +218,7 @@
                         <configuration>
                             <executable>gcc</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
-                            <commandlineArgs>-shared -fPIC -O2 -Wall -I"${java.home}/include" -I"${java.home}/include/linux" -o "src/main/resources/native/lib${native.library.name}.so" "src/main/java/NativeFilter/NativeFilter_GraphicEqualizer.c"</commandlineArgs>
+                            <commandlineArgs>-shared -fPIC -O2 -Wall -I"${java.home}/include" -I"${java.home}/include/linux" -o "src/main/resources/native/linux-x86_64/lib${native.library.name}.so" "src/main/java/NativeFilter/NativeFilter_GraphicEqualizer.c"</commandlineArgs>
                             <successCodes>
                                 <successCode>0</successCode>
                             </successCodes>
@@ -207,7 +226,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <!-- Resources plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -220,7 +238,6 @@
                     </nonFilteredFileExtensions>
                 </configuration>
             </plugin>
-
             <!-- JAR plugin with manifest -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -239,7 +256,6 @@
                     </archive>
                 </configuration>
             </plugin>
-
             <!-- Surefire for testing -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -248,12 +264,11 @@
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <forkCount>1</forkCount>
                     <reuseForks>true</reuseForks>
-                    <argLine>-Djava.library.path=${project.basedir}/src/main/resources/native</argLine>
+                    <argLine>-Djava.library.path=${project.basedir}/src/main/resources/native/linux-x86_64</argLine>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
     <!-- Profiles for different operating systems -->
     <profiles>
         <profile>
@@ -278,7 +293,7 @@
                                 <configuration>
                                     <executable>gcc</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
-                                    <commandlineArgs>-shared -fPIC -O2 -Wall -I"${java.home}/include" -I"${java.home}/include/win32" -o "src/main/resources/native/${native.library.name}.dll" "src/main/java/NativeFilter/NativeFilter_GraphicEqualizer.c"</commandlineArgs>
+                                    <commandlineArgs>-shared -fPIC -O2 -Wall -I"${java.home}/include" -I"${java.home}/include/win32" -o "src/main/resources/native/linux-x86_64/${native.library.name}.dll" "src/main/java/NativeFilter/NativeFilter_GraphicEqualizer.c"</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>
@@ -286,7 +301,6 @@
                 </plugins>
             </build>
         </profile>
-        
         <profile>
             <id>mac</id>
             <activation>
@@ -309,7 +323,7 @@
                                 <configuration>
                                     <executable>gcc</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
-                                    <commandlineArgs>-shared -fPIC -O2 -Wall -I"${java.home}/include" -I"${java.home}/include/darwin" -o "src/main/resources/native/lib${native.library.name}.dylib" "src/main/java/NativeFilter/NativeFilter_GraphicEqualizer.c"</commandlineArgs>
+                                    <commandlineArgs>-shared -fPIC -O2 -Wall -I"${java.home}/include" -I"${java.home}/include/darwin" -o "src/main/resources/native/linux-x86_64/lib${native.library.name}.dylib" "src/main/java/NativeFilter/NativeFilter_GraphicEqualizer.c"</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>
@@ -318,7 +332,6 @@
             </build>
         </profile>
     </profiles>
-
     <!-- For deploying to Sonatype if needed -->
     <distributionManagement>
         <snapshotRepository>

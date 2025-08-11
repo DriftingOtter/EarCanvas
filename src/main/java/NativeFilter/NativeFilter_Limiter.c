@@ -1,14 +1,8 @@
 #include <jni.h>
 #include "NativeFilter_Limiter.h" 
-#include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-
-#ifndef PI
-#define PI 3.14159265358979323846
-#endif
 
 #define MAX_CHANNELS 8
 #define MAX_LOOKAHEAD_SAMPLES 4096

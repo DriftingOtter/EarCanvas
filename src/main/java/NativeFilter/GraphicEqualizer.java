@@ -2,7 +2,7 @@ package NativeFilter;
 
 import java.util.Arrays;
 
-public class GraphicEqualizer { 
+public class GraphicEqualizer implements NativeFilterInterface{ 
     static {
         try {
         	NativeLibLoader.loadLibrary("graphic_equalizer");
