@@ -1,10 +1,8 @@
-# Compiled class file
+# -------------------------------
+# Java
+# -------------------------------
 *.class
-
-# Log file
 *.log
-
-# BlueJ files
 *.ctxt
 
 # Mobile Tools for Java (J2ME)
@@ -19,7 +17,48 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Virtual machine crash logs
 hs_err_pid*
 replay_pid*
+
+# -------------------------------
+# Maven
+# -------------------------------
 /target/
+
+# -------------------------------
+# Eclipse
+# -------------------------------
+.project
+.classpath
+.settings/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+
+# Eclipse Core
+.loadpath
+.recommenders/
+
+# Eclipse JDT-specific
+*.launch
+.factorypath
+
+# Eclipse Plug-in Development
+*.target
+*.texlipse
+
+# Eclipse Gradle (if ever used alongside Maven)
+.gradle/
+build/
+
+# -------------------------------
+# OS-specific
+# -------------------------------
+.DS_Store
+Thumbs.db
+
