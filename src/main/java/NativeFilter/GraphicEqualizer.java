@@ -2,6 +2,8 @@ package NativeFilter;
 
 import java.util.Arrays;
 
+import StandardFilter.InvalidFilterParametersException;
+
 public class GraphicEqualizer implements NativeFilterInterface{ 
     static {
         try {
@@ -36,15 +38,19 @@ public class GraphicEqualizer implements NativeFilterInterface{
     public int getBandCount() { return this.bandCount; }
     public double[] getGains() { return this.bandGains; }
     public double getQ() { return this.qFactor; }
+    public float getSampleRate() { return this.sampleRate; }
 
     public void resetGains() { this.bandGains = new double[bandCount]; }
     public void setChannels(int channelCount) { this.channels = channelCount; }
     public void setBufferSize(int bufferSize) { this.bufferSize = bufferSize; }
-    public void setGains(double[] bandGains) { this.bandGains = sanitizeGains(bandGains, this.bandCount); }
+    public void setGains(double[] bandGains) throws InvalidFilterParametersException { this.bandGains = sanitizeGains(bandGains, this.bandCount); }
     public void setSampleRate(float sampleRate) {this.sampleRate = sampleRate;}
     public void setQ(double q) {this.qFactor = q;}
     
-    private static double[] sanitizeGains(double[] gains, int bandCount) {
+    private static double[] sanitizeGains(double[] gains, int bandCount) throws InvalidFilterParametersException {
+        if (gains == null) {
+            throw new InvalidFilterParametersException("Gains array cannot be null.");
+        }
         double[] sanitized = new double[bandCount];
         for (int i = 0; i < bandCount; i++) {
             double g = (i < gains.length) ? gains[i] : 0.0;
@@ -62,7 +68,7 @@ public class GraphicEqualizer implements NativeFilterInterface{
         this.bandGains = new double[bandCount];
     }
 
-    public GraphicEqualizer(int channels, int bufferSize, float sampleRate, double[] bandGains) {
+    public GraphicEqualizer(int channels, int bufferSize, float sampleRate, double[] bandGains) throws InvalidFilterParametersException {
         this.channels = channels;
         this.bufferSize = bufferSize;
         this.sampleRate = sampleRate;

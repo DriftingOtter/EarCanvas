@@ -1,4 +1,4 @@
-package IIRFilter;
+package StandardFilter;
 
 public class InvalidFilterException extends Exception {
 	

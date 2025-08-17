@@ -1,16 +1,15 @@
-package AudioEqualizer;
+package AudioProcessingRangler;
 
 import NativeFilter.*;
+import StandardFilter.StandardFilter;
 import uk.me.berndporr.iirj.Cascade;
 import java.util.ArrayList;
 
-import IIRFilter.IIRFilter;
-
-public class AudioEqualizer implements AudioEqualizerInterface {
+public class AudioProcessingRangler implements ProcessRanglerInterface {
 
     protected ArrayList<Object> filterRack;
 
-    public AudioEqualizer() {
+    public AudioProcessingRangler() {
         this.filterRack = new ArrayList<>();
     }
 
@@ -41,8 +40,8 @@ public class AudioEqualizer implements AudioEqualizerInterface {
 
     public double[] processData(double[] buffer) {
         for (Object filter : filterRack) {
-            if (filter instanceof IIRFilter) {
-                Cascade settings = ((IIRFilter)filter).getSettings();
+            if (filter instanceof StandardFilter) {
+                Cascade settings = ((StandardFilter)filter).getSettings();
                 for (int i = 0; i < buffer.length; i++) {
                     buffer[i] = settings.filter(buffer[i]);
                 }

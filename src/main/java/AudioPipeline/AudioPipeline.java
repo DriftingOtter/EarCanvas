@@ -1,7 +1,9 @@
 package AudioPipeline;
 
 import javax.sound.sampled.*;
-import AudioEqualizer.AudioEqualizer;
+
+import AudioProcessingRangler.AudioProcessingRangler;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.ExecutorService;
@@ -16,7 +18,7 @@ public class AudioPipeline implements Runnable {
     private static final double NORM_32_BIT_INT = 2147483647.0;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private ExecutorService executorService; // Changed from final to allow recreation
     
     private TargetDataLine targetLine;
     private SourceDataLine sourceLine;
@@ -28,7 +30,7 @@ public class AudioPipeline implements Runnable {
     protected boolean bigEndian;
     protected AudioFormat.Encoding encoding;
 
-    private AudioEqualizer equalizer;
+    private AudioProcessingRangler equalizer;
 
     public AudioPipeline() {
         try {
@@ -54,7 +56,7 @@ public class AudioPipeline implements Runnable {
         }
     }
     
-    public void setEqualizer(AudioEqualizer equalizer) {
+    public void setEqualizer(AudioProcessingRangler equalizer) {
         this.equalizer = equalizer;
     }
 
@@ -63,7 +65,18 @@ public class AudioPipeline implements Runnable {
     }
 
     public void start() {
+        // Check if already running
+        if (running.get()) {
+            System.out.println("AudioPipeline: Already running, ignoring start request.");
+            return;
+        }
+
         try {
+            // Create a new executor service if needed (for restart capability)
+            if (executorService == null || executorService.isShutdown()) {
+                executorService = Executors.newSingleThreadExecutor();
+            }
+
             // --- Setup Input Line (Microphone) ---
             DataLine.Info targetInfo = new DataLine.Info(TargetDataLine.class, format);
             if (!AudioSystem.isLineSupported(targetInfo)) {
@@ -86,6 +99,8 @@ public class AudioPipeline implements Runnable {
             executorService.submit(this);
             System.out.println("AudioPipeline: Service started successfully...");
         } catch (LineUnavailableException e) {
+            // Clean up on failure
+            cleanup();
             throw new RuntimeException("Could not open audio line.", e);
         }
     }
@@ -93,25 +108,37 @@ public class AudioPipeline implements Runnable {
     public void stop() {
         if (running.compareAndSet(true, false)) {
             System.out.println("AudioPipeline: Stopping...");
-            executorService.shutdown();
-            try {
-                if (!executorService.awaitTermination(500, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            
+            // Shutdown executor service
+            if (executorService != null && !executorService.isShutdown()) {
+                executorService.shutdown();
+                try {
+                    if (!executorService.awaitTermination(500, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                        executorService.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
                     executorService.shutdownNow();
+                    Thread.currentThread().interrupt();
                 }
-            } catch (InterruptedException e) {
-                executorService.shutdownNow();
             }
 
-            if (targetLine != null) {
-                targetLine.stop();
-                targetLine.close();
-            }
-            if (sourceLine != null) {
-                sourceLine.drain();
-                sourceLine.stop();
-                sourceLine.close();
-            }
+            cleanup();
             System.out.println("AudioPipeline: Stopped.");
+        }
+    }
+
+    // Helper method to clean up audio lines
+    private void cleanup() {
+        if (targetLine != null) {
+            targetLine.stop();
+            targetLine.close();
+            targetLine = null;
+        }
+        if (sourceLine != null) {
+            sourceLine.drain();
+            sourceLine.stop();
+            sourceLine.close();
+            sourceLine = null;
         }
     }
 

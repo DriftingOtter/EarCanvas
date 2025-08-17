@@ -1,8 +1,8 @@
-package IIRFilter;
+package StandardFilter;
 
 import uk.me.berndporr.iirj.Cascade;
 
-public interface IIRFilterInterface {
+public interface StandardFilterInterface {
 	
 	public int 	  getOrder();
 	public double getSamplerate();

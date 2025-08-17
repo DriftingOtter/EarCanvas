@@ -1,4 +1,6 @@
-package IIRFilter;
+package StandardFilter;
+
+import java.util.Optional;
 
 import uk.me.berndporr.iirj.Bessel;
 import uk.me.berndporr.iirj.Butterworth;
@@ -6,11 +8,7 @@ import uk.me.berndporr.iirj.Cascade;
 import uk.me.berndporr.iirj.ChebyshevI;
 import uk.me.berndporr.iirj.ChebyshevII;
 
-import java.util.Optional;
-
-import IIRFilter.InvalidFilterException;
-
-public class IIRFilter implements IIRFilterInterface {
+public class StandardFilter implements StandardFilterInterface {
     int order;
 	double sampleRate;
 	double centerFrequnecy;
@@ -26,7 +24,7 @@ public class IIRFilter implements IIRFilterInterface {
 	}
 	
 	public int getOrder() {return this.order;}
-	public double getSamplerate() {return this.centerFrequnecy;}
+	public double getSamplerate() {return this.sampleRate;}
 	public double getCenterFrequnecy() {return this.centerFrequnecy;}
 	public double getFrequencyWidth() {return this.frequnecyWidth;}
 	public double getRippleDb() {return this.rippleDb;}
@@ -37,7 +35,7 @@ public class IIRFilter implements IIRFilterInterface {
 	private void setFrequencyWidth(double frequnecyWidth) {this.frequnecyWidth = frequnecyWidth;}
 	private void setCutoffFrequnecy(double cutoffFrequnecy) {this.cutoffFrequnecy = cutoffFrequnecy;}
 
-    public IIRFilter(FilterType filterType, int order, double sampleRate, Optional<Double> rippleDb) throws InvalidFilterException {
+    public StandardFilter(FilterType filterType, int order, double sampleRate, Optional<Double> rippleDb) throws InvalidFilterException {
         try {
             switch (filterType) {
                 case Butterworth:

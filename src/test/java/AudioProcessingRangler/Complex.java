@@ -1,4 +1,4 @@
-package AudioEqualizer;
+package AudioProcessingRangler;
 
 public class Complex {
         public final double re;

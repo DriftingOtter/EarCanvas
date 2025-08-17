@@ -6,7 +6,7 @@ public class ChannelBalancer implements NativeFilterInterface{
 
     static {
         try {
-            NativeLibLoader.loadLibrary("channelbalencer");
+            NativeLibLoader.loadLibrary("channelbalancer");
         } catch (UnsatisfiedLinkError e) {
             System.err.println("Limiter: Native code library failed to load.\n" + e);
             throw e;

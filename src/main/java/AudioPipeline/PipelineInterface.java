@@ -1,11 +1,12 @@
 package AudioPipeline;
 
-import AudioEqualizer.AudioEqualizer;
 import javax.sound.sampled.AudioFormat;
+
+import AudioProcessingRangler.AudioProcessingRangler;
 
 public interface PipelineInterface extends Runnable {
 
-    void setEqualizer(AudioEqualizer equalizer);
+    void setEqualizer(AudioProcessingRangler equalizer);
 
     AudioFormat getFormat();
 

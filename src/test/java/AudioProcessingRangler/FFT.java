@@ -1,4 +1,4 @@
-package AudioEqualizer;
+package AudioProcessingRangler;
 
 public class FFT {
     public static Complex[] fft(Complex[] x) {
@@ -6,21 +6,23 @@ public class FFT {
         if (n == 1) return new Complex[]{x[0]};
 
         if (n % 2 != 0) {
-            throw new IllegalArgumentException("n is not a power of 2");
+            // This implementation of FFT requires the length of the array to be a power of 2.
+            throw new IllegalArgumentException("FFT input length must be a power of 2");
         }
 
+        // --- FIX: Create separate arrays for even and odd parts ---
         Complex[] even = new Complex[n / 2];
+        Complex[] odd = new Complex[n / 2];
         for (int k = 0; k < n / 2; k++) {
             even[k] = x[2 * k];
-        }
-        Complex[] q = fft(even);
-
-        Complex[] odd = even;
-        for (int k = 0; k < n / 2; k++) {
             odd[k] = x[2 * k + 1];
         }
+
+        // Recursive FFT calls
+        Complex[] q = fft(even);
         Complex[] r = fft(odd);
 
+        // Combine results
         Complex[] y = new Complex[n];
         for (int k = 0; k < n / 2; k++) {
             double kth = -2 * k * Math.PI / n;
@@ -31,4 +33,3 @@ public class FFT {
         return y;
     }
 }
-

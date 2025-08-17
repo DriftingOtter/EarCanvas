@@ -1,6 +1,6 @@
-package AudioEqualizer;
+package AudioProcessingRangler;
 
-public interface AudioEqualizerInterface {
+public interface ProcessRanglerInterface {
 
     void addFilter(Object filter, int rackPosition);
     boolean removeFilter(int filterPosition) throws EmptyFilterRackException, IndexOutOfBoundsException;
