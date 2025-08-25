@@ -1,4 +1,4 @@
-# Project Pickup
+# EarCanvas
 
 A high-performance, real-time audio processing application designed for system-wide audio manipulation. Project Pickup intercepts system audio streams and applies a customizable chain of DSP filters before outputting the processed audio. Built with a hybrid architecture combining Java's flexibility with native C/C++ performance for demanding audio processing operations.
 
